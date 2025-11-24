@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 # ZXYZDatabase
 
 This template should help get you started developing with Vue 3 in Vite.
@@ -27,3 +28,7 @@ npm run dev
 ```sh
 npm run build
 ```
+=======
+# ZXYZdatabaseFront
+指绣云章团队数据据库搭建前端部分
+>>>>>>> e39d9a9039414143cb3d83ef475293fc66e4d893
