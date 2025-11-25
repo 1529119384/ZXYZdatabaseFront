@@ -87,16 +87,28 @@ const uploadFiles = ref(null)
 const fileUpload = () => {
   uploadFiles.value.submit()
 }
-const fileUploadSuccess = (response, file, fileList)=>{
+const fileUploadSuccess = (response, file, fileList) => {
   console.log(response);
   // console.log(file);
   // console.log(fileList);
   fileUploadSuccessMsg();
 }
 
+const fileUploadSuccessMsg = () => {
+  console.log("ok");
+  open2();
+};
 
+import { ElMessage } from 'element-plus'
 
-
+const open2 = () => {
+  // 无需手动 import，也无需 app.use
+  ElMessage.success('hello')
+}
+import { onMounted } from 'vue'
+onMounted(() => {
+  ElMessage.success('mounted 测试')
+})
 </script>
 
 <style scoped>
