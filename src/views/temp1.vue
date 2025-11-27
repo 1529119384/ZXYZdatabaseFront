@@ -128,13 +128,11 @@ async function doUpload() {
 
   for (const file of fileList.value) {
     const form = new FormData();
-    form.append("file", file);
+    form.append("file", file); 
 
     try {
       await request.post('/upload', form, {
          headers: {},
-        // 移除自定义headers，避免覆盖token
-        // 对于FormData，浏览器会自动设置正确的Content-Type（包括boundary）
         onUploadProgress: (e) => {
           if (!e.total) return;
           const fileProgress = (e.loaded / e.total) * (100 / total);
@@ -144,7 +142,6 @@ async function doUpload() {
           );
         },
       });
-
       uploaded++;
     } catch (err) {
       console.error(err);
