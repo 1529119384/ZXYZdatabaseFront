@@ -362,16 +362,20 @@ function onCheck(_, ctx) {
  * 发送文件夹名称给后端
  * @param {string} folderName - 文件夹名称
  */
-async function sendFolderName(folderName) {
+async function sendFolderName(folderName, parentId) {
   try {
-    // 发送文件夹名称给后端
-    await request.post('/uploadFolder', {
-      folderName
+    const params = new URLSearchParams();
+    params.append('folderName', folderName);
+    // 只有真实数字才追加，否则不传该字段
+    if (parentId != null) {
+      params.append('parentId', parentId);
+    }
+
+    await request.post('/uploadFolder', params, {
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' }
     });
   } catch (error) {
-    // 发送失败，打印错误信息
-    console.error("发送文件夹名称失败:", error);
-    // 显示错误消息
+    console.error('发送文件夹名称失败:', error);
     ElMessage.error(`发送文件夹名称失败：${folderName}`);
     throw error;
   }
@@ -394,7 +398,8 @@ async function processTreeNodes(nodes) {
         }
       } else {
         // 如果是文件夹节点，发送文件夹名称给后端
-        await sendFolderName(node.name);
+        await sendFolderName(node.name, null);
+        console.log(`文件夹已发送: ${node.name}`);
       }
     }
     // 无论是否选中，都递归处理子节点（如果有）
@@ -431,6 +436,8 @@ async function uploadSelectedFiles() {
     // 重置上传加载状态
     uploadLoading.value = false;
   }
+
+  
 }
 
 // ========================
