@@ -176,7 +176,7 @@ async function uploadSingleFile(file, onProgress) {
   form.append("file", file);
 
   // 发送文件上传请求
-  await request.post('/upload', form, {
+  await request.post('/uploadFile', form, {
     // 上传进度回调函数
     onUploadProgress: onProgress,
   });
@@ -365,7 +365,7 @@ function onCheck(_, ctx) {
 async function sendFolderName(folderName) {
   try {
     // 发送文件夹名称给后端
-    await request.post('/upload/folder', {
+    await request.post('/uploadFolder', {
       folderName
     });
   } catch (error) {
