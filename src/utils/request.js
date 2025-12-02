@@ -9,12 +9,12 @@ const request = axios.create({
 request.interceptors.request.use(
   (config) => {
     const loginUser = JSON.parse(localStorage.getItem("loginUser"))
-    console.log(loginUser);
+    // console.log(loginUser);
 
     if (loginUser && loginUser.token) {
       config.headers.token = loginUser.token;
     }
-    console.log("最终发送的 headers =", config.headers)
+    // console.log("最终发送的 headers =", config.headers)
     return config;   // ✔ 必须返回 config
   },
   (error) => {
