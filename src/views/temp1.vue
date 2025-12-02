@@ -209,13 +209,11 @@ const removeFile = (index) => {
  * @param {Function} onProgress - 进度回调函数
  */
 async function uploadSingleFile(file, onProgress) {
-  // 创建FormData对象，用于发送文件数据
   const form = new FormData();
-  form.append("file", file);
+  const fileName = file.name.split('/').pop(); // ✅ 提取纯文件名
+  form.append("file", file, fileName); // ✅ 指定文件名
 
-  // 发送文件上传请求
   await request.post('/uploadFile', form, {
-    // 上传进度回调函数
     onUploadProgress: onProgress,
   });
 }
@@ -446,8 +444,9 @@ async function processTreeNodes(nodes, parentFolderId) {
       const file = fileMap.get(node.id);
       if (file) {
         const form = new FormData();
-        form.append("file", file);
-        form.append("parentId", parentFolderId);   // ⭐ 关键：文件属于父文件夹
+        const fileName = file.name.split('/').pop(); // ✅ 提取纯文件名
+        form.append("file", file, fileName); // ✅ 指定文件名
+        form.append("parentId", parentFolderId);
 
         await request.post("/uploadFile", form);
       }
