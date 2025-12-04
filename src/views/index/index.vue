@@ -1,9 +1,14 @@
 <template>
   <el-container>
-    <el-header height="32px" class="header-wrap">
+    <el-header height="32px"
+      class="header-wrap">
 
-      <el-dropdown placement="bottom" trigger="click" :show-arrow="false">
-        <el-button type="primary" class="custom" round><el-icon>
+      <el-dropdown placement="bottom"
+        trigger="click"
+        :show-arrow="false">
+        <el-button type="primary"
+          class="custom"
+          round><el-icon>
             <Upload />
           </el-icon>上传</el-button>
         <template #dropdown>
@@ -17,53 +22,77 @@
 
 
       <el-button-group class="custom">
-        <el-button type="primary" plain round>
+        <el-button type="primary"
+          plain
+          round>
           <el-icon>
             <Upload />
           </el-icon>新建文件夹</el-button>
-        <el-button type="primary" plain round>
+        <el-button type="primary"
+          plain
+          round>
           <el-icon>
             <RefreshRight />
           </el-icon>刷新</el-button>
       </el-button-group>
       <el-button-group class="custom">
-        <el-button type="primary" plain round>
+        <el-button type="primary"
+          plain
+          round>
           <el-icon>
             <Download />
           </el-icon>下载</el-button>
-        <el-button type="primary" plain round>
+        <el-button type="primary"
+          plain
+          round>
           <el-icon>
             <Share />
           </el-icon>分享</el-button>
-        <el-button type="primary" plain round>
+        <el-button type="primary"
+          plain
+          round>
           <el-icon>
             <Star />
           </el-icon>收藏</el-button>
-        <el-button type="primary" plain round>
+        <el-button type="primary"
+          plain
+          round>
           <el-icon>
             <EditPen />
           </el-icon>重命名</el-button>
-        <el-button type="primary" plain round>
+        <el-button type="primary"
+          plain
+          round>
           <el-icon>
             <DocumentCopy />
           </el-icon>复制</el-button>
-        <el-button type="primary" plain round>
+        <el-button type="primary"
+          plain
+          round>
           <el-icon>
             <Rank />
           </el-icon>移动</el-button>
-        <el-button type="primary" plain round>
+        <el-button type="primary"
+          plain
+          round>
           <el-icon>
             <Lock />
           </el-icon>锁定</el-button>
-        <el-button type="primary" plain round>
+        <el-button type="primary"
+          plain
+          round>
           <el-icon>
             <DeleteFilled />
           </el-icon>删除</el-button>
       </el-button-group>
-      <el-input v-model="searchText" class="input" style="width: 240px" placeholder="搜索文件" :suffix-icon="Search" />
+      <el-input v-model="searchText"
+        class="input"
+        style="width: 240px"
+        placeholder="搜索文件"
+        :suffix-icon="Search" />
     </el-header>
-    <el-main>Main</el-main>
 
+    <FileShow />
     <!-- 上传组件 -->
     <Uploader ref="uploaderRef" />
   </el-container>
@@ -74,6 +103,7 @@ import { Search } from '@element-plus/icons-vue'
 import { ref } from 'vue';
 // 引入上传组件
 import Uploader from '@/components/Uploader.vue';
+import FileShow from '@/components/FileShow.vue';
 
 const searchText = ref('')
 // 上传组件引用
