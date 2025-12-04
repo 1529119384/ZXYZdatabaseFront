@@ -23,7 +23,7 @@
           <span>{{ f.name }}</span>
           <!-- 文件大小 -->
           <span class="file-size">
-            {{ formatSize(f.size) }}
+            {{ $formatSize(f.size) }}
           </span>
 
           <!-- 删除文件按钮 -->
@@ -80,7 +80,8 @@
 
             <!-- 文件大小：仅文件节点显示 -->
             <span v-if="node.data.isLeaf" class="file-size">
-              {{ formatSize(node.data.size) }}
+              {{ $formatSize(node.data.size) }}
+              
             </span>
           </template>
         </el-tree-v2>
@@ -455,25 +456,6 @@ async function uploadSelectedFiles() {
 
 }
 
-// ========================
-// 工具函数
-// ========================
-
-/**
- * 格式化文件大小，将字节转换为可读格式（B、KB、MB、GB）
- * @param {number} bytes - 文件大小（字节）
- * @returns {string} 格式化后的文件大小
- */
-function formatSize(bytes) {
-  // 如果字节数为0，直接返回0 B
-  if (!bytes) return "0 B";
-  // 单位数组
-  const units = ["B", "KB", "MB", "GB"];
-  // 计算单位索引
-  const i = Math.floor(Math.log(bytes) / Math.log(1024));
-  // 格式化并返回结果
-  return (bytes / Math.pow(1024, i)).toFixed(1) + " " + units[i];
-}
 
 // ========================
 // 组件对外暴露的方法
