@@ -10,8 +10,7 @@ import MyShare from "@/views/my_share/index.vue";
 import RecycleBin from "@/views/recycle_bin/index.vue";
 import Setting from "@/views/setting/index.vue";
 
-import Temp from '@/views/temp.vue';
-import Temp1 from '@/views/temp1.vue';
+
 
 
 const router = createRouter({
@@ -29,8 +28,6 @@ const router = createRouter({
       ]
     },
     { path: '/login', name: 'login', component: Login },
-    { path: '/temp', name: 'temp', component: Temp },
-    { path: '/temp1', name: 'temp1', component: Temp1 },
   ]
 })
 
