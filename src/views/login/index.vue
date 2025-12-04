@@ -40,6 +40,7 @@ document.addEventListener("keydown", function (e) {
 })
 function login() {
   console.log(sizeForm)
+  localStorage.setItem("loginUser", "your_token_here")
 }
 </script>
 
