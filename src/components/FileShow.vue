@@ -1,16 +1,21 @@
 <template>
   <div class="file-page">
     <!-- 面包屑：直接根据 $route.query.path 生成 -->
-    <el-breadcrumb :separator-icon="ArrowRight" class="breadcrumb">
-      <el-breadcrumb-item v-for="(name, idx) in crumbArr" :key="idx"
+    <el-breadcrumb :separator-icon="ArrowRight"
+      class="breadcrumb">
+      <el-breadcrumb-item v-for="(name, idx) in crumbArr"
+        :key="idx"
         :to="{ name: 'Files', query: { path: crumbPath(idx) } }">
         {{ name || '首页' }}
       </el-breadcrumb-item>
     </el-breadcrumb>
 
     <!-- 文件表格 -->
-    <el-table :data="list" style="width:100%" @row-dblclick="enterFolder">
-      <el-table-column type="selection" width="55" />
+    <el-table :data="list"
+      style="width:100%"
+      @row-dblclick="enterFolder">
+      <el-table-column type="selection"
+        width="55" />
       <el-table-column label="名称">
         <template #default="{ row }">
           <div style="display:flex;align-items:center">
@@ -21,10 +26,23 @@
           </div>
         </template>
       </el-table-column>
-      <el-table-column label="修改时间" width="180" />
-      <el-table-column label="大小" width="120" />
+      <el-table-column label="修改时间"
+        width="180">
+        <template #default="{ row }">
+          {{ $fmtTime(row.modifyTime) }}
+        </template>
+      </el-table-column>
+      <el-table-column label="大小"
+        width="120">
+        <template #default="{ row }">
+          {{ row.fileSize ?? '-' }}
+        </template>
+      </el-table-column>
     </el-table>
   </div>
+  <el-button @click="getFileList()"
+    type="primary">获取列表</el-button>
+
 </template>
 
 <script setup>
@@ -33,14 +51,14 @@ import { ref, computed, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { ArrowRight } from '@element-plus/icons-vue'
 // import fetchList from '@/api/files'
-import axios from 'axios'
-
+import request from "@/utils/request";
 /* ------------------ 路由 ------------------ */
 const route = useRoute()
 const router = useRouter()
 
 /* ------------------ 数据 ------------------ */
 const list = ref([])                // 当前目录文件列表
+
 
 /* ------------------ 图标 ------------------ */
 const iconMap = {
@@ -60,20 +78,35 @@ const crumbPath = (idx) =>
   '/' + crumbArr.value.slice(0, idx + 1).join('/')
 
 /* ------------------ 获取列表 ------------------ */
-async function fetchList() {
-  // 1. 调接口：把当前路径 encode 后传给后端
-  const { data } = await axios.get('/api/files', {
-    params: { path: route.query.path || '/' }
-  })
-  if(data.code==0){
-    console.log("出错了",data);
-  
-  }
-  // 2. 后端返回当前目录下的文件/文件夹数组
-  list.value = data
+// async function fetchList() {
+//   // 1. 调接口：把当前路径 encode 后传给后端
+//   const { data } = await axios.get('/api/files', {
+//     params: { path: route.query.path || '/' }
+//   })
+//   if(data.code==0){
+//     console.log("出错了",data);
+
+//   }
+//   // 2. 后端返回当前目录下的文件/文件夹数组
+//   list.value = data
+// }
+const currentId = ref(148);
+async function getFileList() {
+  console.log("当前文件夹id为", currentId.value)
+  const fileList = await request.get('/getFileList', { params: { parentId: currentId.value } })
+  console.log("获取到信息为", fileList);
+  list.value = fileList.data.map(item => ({
+    ...item,                  // 先把原对象所有字段展开
+    fileName: item.originalName, // 新增/重命名字段
+    type: item.fileType,
+    // 如果还想删掉 originalName 可以再加一句：
+    originalName: undefined,
+    fileType: undefined,
+  }))
 }
+
 // 路由参数变化就重新拉数据
-watch(() => route.query.path, fetchList, { immediate: true })
+watch(() => route.query.path, getFileList, { immediate: true })
 
 /* ------------------ 进入下级文件夹 ------------------ */
 function enterFolder(row) {
@@ -99,5 +132,6 @@ function enterFolder(row) {
 .icon {
   width: 20px;
   height: 20px;
+  fill: currentColor;
 }
 </style>
