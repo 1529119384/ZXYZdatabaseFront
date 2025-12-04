@@ -1,9 +1,21 @@
 <template>
   <el-container>
     <el-header height="32px" class="header-wrap">
-      <el-button type="primary" class="custom" round><el-icon>
-          <Upload />
-        </el-icon>上传</el-button>
+
+      <el-dropdown placement="bottom" trigger="click" :show-arrow="false">
+        <el-button type="primary" class="custom" round><el-icon>
+            <Upload />
+          </el-icon>上传</el-button>
+        <template #dropdown>
+          <el-dropdown-menu>
+
+            <el-dropdown-item @click="openFileUpload">上传文件</el-dropdown-item>
+            <el-dropdown-item @click="openFolderUpload">上传文件夹</el-dropdown-item>
+          </el-dropdown-menu>
+        </template>
+      </el-dropdown>
+
+
       <el-button-group class="custom">
         <el-button type="primary" plain round>
           <el-icon>
@@ -51,13 +63,35 @@
       <el-input v-model="searchText" class="input" style="width: 240px" placeholder="搜索文件" :suffix-icon="Search" />
     </el-header>
     <el-main>Main</el-main>
+
+    <!-- 上传组件 -->
+    <Uploader ref="uploaderRef" />
   </el-container>
 </template>
 
 <script setup>
 import { Search } from '@element-plus/icons-vue'
 import { ref } from 'vue';
+// 引入上传组件
+import Uploader from '@/components/Uploader.vue';
+
 const searchText = ref('')
+// 上传组件引用
+const uploaderRef = ref(null);
+
+/**
+ * 打开文件上传弹窗
+ */
+const openFileUpload = () => {
+  uploaderRef.value.openFileUpload();
+};
+
+/**
+ * 打开文件夹上传弹窗
+ */
+const openFolderUpload = () => {
+  uploaderRef.value.openFolderUpload();
+};
 </script>
 
 <style scoped>
