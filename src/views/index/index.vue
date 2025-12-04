@@ -1,4 +1,5 @@
 <template>
+  <Uploader ref="uploaderRef" />
   <el-container>
     <el-header height="32px"
       class="header-wrap">
@@ -30,7 +31,8 @@
           </el-icon>新建文件夹</el-button>
         <el-button type="primary"
           plain
-          round>
+          round
+          @click="refresh">
           <el-icon>
             <RefreshRight />
           </el-icon>刷新</el-button>
@@ -92,9 +94,8 @@
         :suffix-icon="Search" />
     </el-header>
 
-    <FileShow />
+    <FileShow ref="fileShowRef"/>
     <!-- 上传组件 -->
-    <Uploader ref="uploaderRef" />
   </el-container>
 </template>
 
@@ -106,19 +107,19 @@ import Uploader from '@/components/Uploader.vue';
 import FileShow from '@/components/FileShow.vue';
 
 const searchText = ref('')
+const fileShowRef = ref(null);
+const refresh = () =>{
+  fileShowRef.value.refresh()
+}
+// const fileShowRef
+
+
 // 上传组件引用
 const uploaderRef = ref(null);
-
-/**
- * 打开文件上传弹窗
- */
 const openFileUpload = () => {
   uploaderRef.value.openFileUpload();
 };
 
-/**
- * 打开文件夹上传弹窗
- */
 const openFolderUpload = () => {
   uploaderRef.value.openFolderUpload();
 };

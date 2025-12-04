@@ -40,8 +40,6 @@
       </el-table-column>
     </el-table>
   </div>
-  <el-button @click="getFileList()"
-    type="primary">获取列表</el-button>
 
 </template>
 
@@ -99,7 +97,6 @@ async function getFileList() {
     ...item,                  // 先把原对象所有字段展开
     fileName: item.originalName, // 新增/重命名字段
     type: item.fileType,
-    // 如果还想删掉 originalName 可以再加一句：
     originalName: undefined,
     fileType: undefined,
   }))
@@ -117,6 +114,15 @@ function enterFolder(row) {
     : current + '/' + encodeURIComponent(row.fileName)
   router.push({ name: 'Files', query: { path: nextPath } })
 }
+
+defineExpose({
+  refresh() {
+    getFileList()
+  },
+  setCurrentId(parentId) {
+    currentId.value = parentId
+  }
+})
 </script>
 
 <style scoped>
