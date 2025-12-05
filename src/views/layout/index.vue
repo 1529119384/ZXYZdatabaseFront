@@ -1,13 +1,21 @@
 <template>
   <div class="common-layout">
     <el-container>
-      <el-header height="50px" class="app-header">
+      <el-header height="50px"
+        class="app-header">
         <div class="header-left">
-          <img src="@/assets/images/logo2.png" alt="logo" class="logo" />
+          <img src="@/assets/images/logo2.png"
+            alt="logo"
+            class="logo" />
         </div>
         <div class="header-right">
-          <el-dropdown placement="bottom" trigger="click" :show-arrow="false">
-            <el-avatar :size="40" :src="avatarUrl" class="avatar" @click="handleAvatarClick"/>
+          <el-dropdown placement="bottom"
+            trigger="click"
+            :show-arrow="false">
+            <el-avatar :size="40"
+              :src="avatarUrl"
+              class="avatar"
+              @click="handleAvatarClick" />
             <template #dropdown>
               <el-dropdown-menu>
                 <el-dropdown-item>个人信息</el-dropdown-item>
@@ -15,12 +23,12 @@
               </el-dropdown-menu>
             </template>
           </el-dropdown>
-
         </div>
       </el-header>
       <el-container>
         <el-aside width="200px">
-          <el-menu default-active="index" router>
+          <el-menu default-active="index"
+            router>
             <el-menu-item index="index">
               <el-icon>
                 <HomeFilled />
@@ -54,7 +62,7 @@
           </el-menu>
         </el-aside>
         <el-main>
-          <router-view></router-view>
+          <router-view />
         </el-main>
       </el-container>
     </el-container>
