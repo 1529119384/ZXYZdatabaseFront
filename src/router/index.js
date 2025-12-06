@@ -1,23 +1,22 @@
+// router/index.js
 import { createRouter, createWebHistory } from "vue-router";
+import { isLoggedIn } from '@/utils/auth';
 
 import Login from "@/views/login/index.vue";
-
 import Layout from "@/views/layout/index.vue";
-
 import Index from "@/views/index/index.vue";
 import MyStar from "@/views/my_star/index.vue";
 import MyShare from "@/views/my_share/index.vue";
 import RecycleBin from "@/views/recycle_bin/index.vue";
 import Setting from "@/views/setting/index.vue";
 
-
-
-
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
   routes: [
     {
-      path: '/', name: '', component: Layout,
+      path: '/',
+      name: 'layout',
+      component: Layout,
       redirect: '/index',
       children: [
         { path: 'index', name: 'index', component: Index },
@@ -29,6 +28,16 @@ const router = createRouter({
     },
     { path: '/login', name: 'login', component: Login },
   ]
-})
+});
+
+/* 全局前置守卫 —— 放在 createRouter 之后 */
+router.beforeEach((to, from, next) => {
+  if (to.name === 'login') return next();          // 登录页直接过
+  if (!isLoggedIn()) {
+    next({ name: 'login', query: { redirect: to.fullPath } });
+  } else {
+    next();
+  }
+});
 
 export default router;
