@@ -4,16 +4,26 @@
       <el-header class="title">欢迎来到指绣云章</el-header>
       <el-main class="form">
         <br />
-        <el-form style="max-width: 600px" :model="sizeForm" label-width="auto" :label-position="labelPosition"
+        <el-form style="max-width: 600px"
+          :model="sizeForm"
+          label-width="auto"
+          :label-position="labelPosition"
           :size="size">
           <el-form-item>
-            <el-input v-model="sizeForm.username" placeholder="请输入用户名" class="input">
-              <template #prefix class="form_tip">用户名：</template>
+            <el-input v-model="sizeForm.username"
+              placeholder="请输入用户名"
+              class="input">
+              <template #prefix
+                class="form_tip">用户名：</template>
             </el-input>
           </el-form-item>
           <el-form-item>
-            <el-input v-model="sizeForm.password" placeholder="请输入密码" class="input" show-password="true">
-              <template #prefix class="form_tip">密 码：</template>
+            <el-input v-model="sizeForm.password"
+              placeholder="请输入密码"
+              class="input"
+              show-password="true">
+              <template #prefix
+                class="form_tip">密 码：</template>
             </el-input>
           </el-form-item>
         </el-form>
@@ -26,6 +36,12 @@
 
 <script setup>
 import { reactive, ref } from 'vue'
+import request from '@/utils/request'
+
+import { useRouter, useRoute } from 'vue-router'
+const router = useRouter()
+const route = useRoute()
+
 const size = ref('large')
 const labelPosition = ref('left')
 const sizeForm = reactive({
@@ -38,9 +54,14 @@ document.addEventListener("keydown", function (e) {
     login()
   }
 })
-function login() {
+async function login() {
   console.log(sizeForm)
-  localStorage.setItem("loginUser", "your_token_here")
+  const result = await request.post('/login', sizeForm);
+  const jwt = result.data
+  localStorage.setItem("loginUser", JSON.stringify({ token: jwt }));
+  
+  const redirect = route.query.redirect || '/index'
+  router.replace(redirect)
 }
 </script>
 
@@ -79,8 +100,10 @@ function login() {
   font-size: 24px;
   color: rgba(69, 159, 201, 1);
   font-family: "BoutiqueBitmap", "Source Han Sans CN", "Microsoft YaHei", sans-serif;
-  margin-right: 8px;   /* 与输入框距离 */
-  white-space: nowrap; /* 防止被挤换行 */
+  margin-right: 8px;
+  /* 与输入框距离 */
+  white-space: nowrap;
+  /* 防止被挤换行 */
 }
 
 .form {
