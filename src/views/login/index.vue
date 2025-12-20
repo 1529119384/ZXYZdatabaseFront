@@ -55,10 +55,12 @@ document.addEventListener("keydown", function (e) {
   }
 })
 async function login() {
-  console.log(sizeForm)
-  const result = await request.post('/login', sizeForm);
-  if (result && result.tokenValue) {
-    localStorage.setItem(result.tokenName, JSON.stringify({ token: result.tokenValue }))
+  // console.log(sizeForm)
+  const res = await request.post('/login', sizeForm);
+
+  console.log("登录成功，收到结果：", res)
+  if (res.data && res.data.tokenValue) {
+    localStorage.setItem(res.data.tokenName, JSON.stringify({ token: res.data.tokenValue }))
     const redirect = route.query.redirect || '/index'
     router.replace(redirect)
   }
