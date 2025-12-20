@@ -1,12 +1,23 @@
 <template>
   <div class="uploader">
     <!-- 文件上传弹窗 -->
-    <el-dialog v-model="fileUploadDialog" title="文件上传" width="500" :close-on-click-modal="false"
-      :close-on-press-escape="false" :show-close="false">
+    <el-dialog v-model="fileUploadDialog"
+      title="文件上传"
+      width="500"
+      :close-on-click-modal="false"
+      :close-on-press-escape="false"
+      :show-close="false">
       <!-- 拖拽/点击上传区域 -->
-      <div class="upload-drag" @dragover.prevent="handleDragOver" @drop.prevent="handleDrop" @click="triggerSelect">
+      <div class="upload-drag"
+        @dragover.prevent="handleDragOver"
+        @drop.prevent="handleDrop"
+        @click="triggerSelect">
         <!-- 隐藏的文件选择输入框 -->
-        <input ref="fileInput" type="file" multiple class="hidden-input" @change="handleSelect" />
+        <input ref="fileInput"
+          type="file"
+          multiple
+          class="hidden-input"
+          @change="handleSelect" />
 
         <!-- 上传区域提示内容 -->
         <div class="upload-content">
@@ -16,9 +27,12 @@
       </div>
 
       <!-- 文件列表展示：仅当有文件时显示 -->
-      <div v-if="fileList.length" class="file-list">
+      <div v-if="fileList.length"
+        class="file-list">
         <!-- 遍历文件列表，显示每个文件信息 -->
-        <div v-for="(f, index) in fileList" :key="index" class="file-item">
+        <div v-for="(f, index) in fileList"
+          :key="index"
+          class="file-item">
           <!-- 文件名 -->
           <span>{{ f.name }}</span>
           <!-- 文件大小 -->
@@ -27,27 +41,35 @@
           </span>
 
           <!-- 删除文件按钮 -->
-          <el-icon class="remove-btn" @click.stop="removeFile(index)">
+          <el-icon class="remove-btn"
+            @click.stop="removeFile(index)">
             <Close />
           </el-icon>
         </div>
       </div>
 
       <!-- 上传进度条：仅当上传中时显示 -->
-      <div v-if="uploading" class="upload-progress">
-        <el-progress :percentage="progress" status="success" :stroke-width="12" />
+      <div v-if="uploading"
+        class="upload-progress">
+        <el-progress :percentage="progress"
+          status="success"
+          :stroke-width="12" />
       </div>
 
       <!-- 弹窗底部按钮 -->
       <template #footer>
         <div class="dialog-footer">
           <!-- 取消按钮：上传中时禁用 -->
-          <el-button :disabled="uploading" @click="fileUploadDialog = false">
+          <el-button :disabled="uploading"
+            @click="fileUploadDialog = false">
             取消
           </el-button>
 
           <!-- 上传按钮：上传中显示加载状态，无文件时禁用 -->
-          <el-button type="primary" :loading="uploading" :disabled="!fileList.length" @click="doUpload">
+          <el-button type="primary"
+            :loading="uploading"
+            :disabled="!fileList.length"
+            @click="doUpload">
             {{ uploading ? "上传中..." : "上传" }}
           </el-button>
         </div>
@@ -55,15 +77,28 @@
     </el-dialog>
 
     <!-- 文件夹上传（隐藏输入框）：支持webkitdirectory属性选择文件夹 -->
-    <input ref="folderInput" type="file" webkitdirectory multiple hidden @change="onFolderSelected" />
+    <input ref="folderInput"
+      type="file"
+      webkitdirectory
+      multiple
+      hidden
+      @change="onFolderSelected" />
 
     <!-- 文件夹上传弹窗：展示文件夹结构和上传已勾选文件 -->
-    <el-dialog v-model="folderUploadDialog" title="文件夹上传" width="500" :close-on-click-modal="false"
-      :close-on-press-escape="false" :show-close="false">
+    <el-dialog v-model="folderUploadDialog"
+      title="文件夹上传"
+      width="500"
+      :close-on-click-modal="false"
+      :close-on-press-escape="false"
+      :show-close="false">
       <!-- 文件夹树状结构：使用滚动条包裹 -->
-      <el-scrollbar v-if="folderTree.length" height="100%">
+      <el-scrollbar v-if="folderTree.length"
+        height="100%">
         <!-- 树状组件：支持多选，展示文件夹结构 -->
-        <el-tree-v2 :data="folderTree" show-checkbox :props="{ label: 'name' }" @check="onCheck">
+        <el-tree-v2 :data="folderTree"
+          show-checkbox
+          :props="{ label: 'name' }"
+          @check="onCheck">
           <!-- 自定义树节点内容：根据节点类型显示不同图标 -->
           <template #default="{ node }">
             <el-icon>
@@ -79,9 +114,10 @@
             <span>{{ node.label }}</span>
 
             <!-- 文件大小：仅文件节点显示 -->
-            <span v-if="node.data.isLeaf" class="file-size">
+            <span v-if="node.data.isLeaf"
+              class="file-size">
               {{ $formatSize(node.data.size) }}
-              
+
             </span>
           </template>
         </el-tree-v2>
@@ -92,7 +128,9 @@
         <!-- 取消按钮 -->
         <el-button @click="folderUploadDialog = false">取消</el-button>
         <!-- 上传已勾选按钮：上传中显示加载状态，无勾选文件时禁用 -->
-        <el-button type="primary" :loading="uploadLoading" :disabled="!checkedKeys.length || uploadLoading"
+        <el-button type="primary"
+          :loading="uploadLoading"
+          :disabled="!checkedKeys.length || uploadLoading"
           @click="uploadSelectedFiles">
           <el-icon>
             <Upload />
@@ -120,6 +158,8 @@ import {
   Upload
 } from '@element-plus/icons-vue';
 
+import {useCurrentIdStore} from '@/store/currentId';
+const currentIdStore = useCurrentIdStore();
 // ========================
 // 文件上传组件相关变量和函数
 // ========================
@@ -177,6 +217,7 @@ async function uploadSingleFile(file, onProgress) {
   const form = new FormData();
   const fileName = file.name.split('/').pop(); // ✅ 提取纯文件名
   form.append("file", file, fileName); // ✅ 指定文件名
+  form.append("parentId", currentIdStore.currentId); // ⭐ 传递父文件夹 ID
 
   await request.post('/uploadFile', form, {
     onUploadProgress: onProgress,
@@ -254,12 +295,6 @@ const uploadLoading = ref(false);
 // 文件ID到文件对象的映射，用于快速查找文件
 const fileMap = new Map();
 
-/**
- * 触发文件夹选择对话框
- */
-function triggerFolderSelect() {
-  folderInput.value.click();
-}
 
 /**
  * 处理文件夹选择事件
@@ -364,13 +399,13 @@ function onCheck(_, ctx) {
  * 发送文件夹名称给后端
  * @param {string} folderName - 文件夹名称
  */
-async function sendFolderName(folderName, parentId) {
+async function sendFolderName(folderName) {
   try {
     const params = new URLSearchParams();
     params.append("folderName", folderName);
 
-    if (parentId !== undefined && parentId !== null) {
-      params.append("parentId", parentId);
+    if (currentIdStore.currentId !== undefined && currentIdStore.currentId !== null) {
+      params.append("parentId", currentIdStore.currentId);
     }
 
     const res = await request.post("/uploadFolder", params, {
@@ -390,18 +425,18 @@ async function sendFolderName(folderName, parentId) {
  * 递归遍历树节点，处理选中的文件和文件夹
  * @param {Array} nodes - 树节点数组
  */
-async function processTreeNodes(nodes, parentFolderId) {
+async function processTreeNodes(nodes) {
   for (const node of nodes) {
     // 是否被用户勾选？
     const checked = checkedKeys.value.includes(node.id);
 
-    let currentFolderId = parentFolderId;
+
 
     // 如果是文件夹，并且被勾选，先往后端创建文件夹
     if (!node.isLeaf && checked) {
-      const folderId = await sendFolderName(node.name, parentFolderId);
+      const folderId = await sendFolderName(node.name, currentIdStore.currentId);
       node.folderId = folderId;       // ⭐ 保存该文件夹的 ID
-      currentFolderId = folderId;     // ⭐ 作为其子节点的父 ID
+      currentIdStore.currentId = folderId;     // ⭐ 作为其子节点的父 ID
     }
 
     // 如果是文件并且被勾选 → 上传文件（带 parentId）
@@ -411,7 +446,7 @@ async function processTreeNodes(nodes, parentFolderId) {
         const form = new FormData();
         const fileName = file.name.split('/').pop(); // ✅ 提取纯文件名
         form.append("file", file, fileName); // ✅ 指定文件名
-        form.append("parentId", parentFolderId);
+        form.append("parentId", currentIdStore.currentId); // ⭐ 传递父文件夹 ID
 
         await request.post("/uploadFile", form);
       }
@@ -419,7 +454,7 @@ async function processTreeNodes(nodes, parentFolderId) {
 
     // 无论是否勾选，都要继续往下递归（因为子节点可能勾选）
     if (node.children && node.children.length > 0) {
-      await processTreeNodes(node.children, currentFolderId);
+      await processTreeNodes(node.children, currentIdStore.currentId);
     }
   }
 }
@@ -473,7 +508,7 @@ defineExpose({
    * 打开文件夹上传弹窗
    */
   openFolderUpload() {
-    triggerFolderSelect();
+    folderInput.value.click();
   }
 });
 </script>
