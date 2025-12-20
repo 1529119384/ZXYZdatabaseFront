@@ -57,11 +57,11 @@ document.addEventListener("keydown", function (e) {
 async function login() {
   console.log(sizeForm)
   const result = await request.post('/login', sizeForm);
-  const jwt = result.data
-  localStorage.setItem("loginUser", JSON.stringify({ token: jwt }));
-  
-  const redirect = route.query.redirect || '/index'
-  router.replace(redirect)
+  if (result && result.tokenValue) {
+    localStorage.setItem(result.tokenName, JSON.stringify({ token: result.tokenValue }))
+    const redirect = route.query.redirect || '/index'
+    router.replace(redirect)
+  }
 }
 </script>
 
