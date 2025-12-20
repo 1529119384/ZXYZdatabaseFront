@@ -23,12 +23,15 @@
 
 
       <el-button-group class="custom">
+
         <el-button type="primary"
           plain
-          round>
+          round
+          @click="createFolder()">
           <el-icon>
             <Upload />
           </el-icon>新建文件夹</el-button>
+
         <el-button type="primary"
           plain
           round
@@ -94,21 +97,24 @@
         :suffix-icon="Search" />
     </el-header>
 
-    <FileShow ref="fileShowRef"/>
+    <FileShow ref="fileShowRef" />
+    <CreateFolder ref="createFolderRef"/>
     <!-- 上传组件 -->
   </el-container>
 </template>
 
 <script setup>
+import requst from '@/utils/request';
 import { Search } from '@element-plus/icons-vue'
 import { ref } from 'vue';
 // 引入上传组件
 import Uploader from '@/components/Uploader.vue';
 import FileShow from '@/components/FileShow.vue';
+import CreateFolder from '@/components/CreateFolder.vue';
 
 const searchText = ref('')
 const fileShowRef = ref(null);
-const refresh = () =>{
+const refresh = () => {
   fileShowRef.value.refresh()
 }
 // const fileShowRef
@@ -123,6 +129,11 @@ const openFileUpload = () => {
 const openFolderUpload = () => {
   uploaderRef.value.openFolderUpload();
 };
+
+const createFolderRef = ref(null);
+const createFolder = () => {
+  createFolderRef.value.openCreateFolder();
+}
 </script>
 
 <style scoped>
