@@ -3,7 +3,7 @@ import App from './App.vue'
 import router from './router'
 import * as ElementPlusIconsVue from '@element-plus/icons-vue'
 import 'element-plus/es/components/message/style/css'
-
+import { createPinia } from 'pinia'
 // import './assets/main.css'
 
 const app = createApp(App)
@@ -20,6 +20,7 @@ app.config.globalProperties.$formatSize = (bytes) => {
   const i = Math.floor(Math.log(bytes) / Math.log(1024))
   return (bytes / Math.pow(1024, i)).toFixed(1) + ' ' + units[i]
 }
+app.use(createPinia()) 
 app.use(router)
 app.mount('#app')
 
