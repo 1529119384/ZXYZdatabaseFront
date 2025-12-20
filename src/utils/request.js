@@ -29,7 +29,7 @@ request.interceptors.request.use(
 request.interceptors.response.use(
   (response) => {
     const res = response.data;
-    if (res.code === 1) { return res.data };          // 业务正常
+    if (res.code === 1) { return res };          // 业务正常
 
     // 未登录
     if (res.message === 'NO_LOGIN') {
