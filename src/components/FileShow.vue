@@ -339,7 +339,6 @@ const handleMenuAction = (action) => {
       console.log('操作错误:');
       break;
   }
-
   closeContextMenu();
 }
 
