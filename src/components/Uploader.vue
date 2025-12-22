@@ -96,9 +96,7 @@
         height="100%">
         <!-- 树状组件：支持多选，展示文件夹结构 -->
         <el-tree-v2 :data="folderTree"
-          show-checkbox
-          :props="{ label: 'name' }"
-          @check="onCheck">
+          :props="{ label: 'name' }">
           <!-- 自定义树节点内容：根据节点类型显示不同图标 -->
           <template #default="{ node }">
             <el-icon>
@@ -130,12 +128,12 @@
         <!-- 上传已勾选按钮：上传中显示加载状态，无勾选文件时禁用 -->
         <el-button type="primary"
           :loading="uploadLoading"
-          :disabled="!checkedKeys.length || uploadLoading"
+          :disabled="uploadLoading"
           @click="uploadSelectedFiles">
           <el-icon>
             <Upload />
           </el-icon>
-          {{ uploadLoading ? "上传中..." : "上传已勾选" }}
+          {{ uploadLoading ? "上传中..." : "上传文件夹" }}
         </el-button>
       </template>
     </el-dialog>
@@ -143,375 +141,231 @@
 </template>
 
 <script setup>
-// 导入Vue的ref响应式API
-import { ref } from "vue";
-// 导入自定义请求工具
-import request from "@/utils/request";
-// 导入Element Plus的消息提示和加载组件
-import { ElMessage, ElLoading } from "element-plus";
-// 导入Element Plus的图标
-import {
-  Close,
-  Document,
-  Folder,
-  FolderOpened,
-  Upload
-} from '@element-plus/icons-vue';
+import { ref } from 'vue'
+import request from '@/utils/request'
+import { ElMessage, ElLoading } from 'element-plus'
+import { useCurrentIdStore } from '@/store/currentId'
 
-import {useCurrentIdStore} from '@/store/currentId';
-const currentIdStore = useCurrentIdStore();
-// ========================
-// 文件上传组件相关变量和函数
-// ========================
+/* =====================================================
+   Store & 通用
+===================================================== */
 
-// 文件上传弹窗显示状态
-const fileUploadDialog = ref(false);
-// 文件选择输入框的引用
-const fileInput = ref(null);
-// 已选择的文件列表
-const fileList = ref([]);
-// 上传状态标记
-const uploading = ref(false);
-// 上传进度百分比
-const progress = ref(0);
+const currentIdStore = useCurrentIdStore()
 
-/**
- * 触发文件选择对话框
- */
-const triggerSelect = () => fileInput.value.click();
+/* =====================================================
+   一、普通文件上传（File Upload）
+===================================================== */
 
-/**
- * 处理文件拖拽悬停事件
- */
-const handleDragOver = (e) => e.preventDefault();
+const fileUploadDialog = ref(false)
+const fileInput = ref(null)
 
-/**
- * 向文件列表添加文件
- */
-const addFiles = (files) => fileList.value.push(...files);
+const fileList = ref([])
+const uploading = ref(false)
+const progress = ref(0)
 
-/**
- * 处理文件选择事件
- */
-const handleSelect = (e) => addFiles(Array.from(e.target.files));
+/* 选择 / 拖拽文件 */
 
-/**
- * 处理文件拖放事件
- */
-const handleDrop = (e) => addFiles(Array.from(e.dataTransfer.files));
+const triggerSelect = () => fileInput.value?.click()
+const handleDragOver = e => e.preventDefault()
 
-/**
- * 从文件列表中移除指定索引的文件
- * @param {number} index - 要移除的文件索引
- */
-const removeFile = (index) => {
-  fileList.value.splice(index, 1);
-};
+function appendFiles(files) {
+  fileList.value.push(...files)
+}
 
-/**
- * 上传单个文件
- * @param {File} file - 要上传的文件
- * @param {Function} onProgress - 进度回调函数
- */
+function handleSelect(e) {
+  appendFiles(Array.from(e.target.files))
+  e.target.value = ''
+}
+
+function handleDrop(e) {
+  appendFiles(Array.from(e.dataTransfer.files))
+}
+
+function removeFile(index) {
+  fileList.value.splice(index, 1)
+}
+
+/* 上传逻辑 */
+
 async function uploadSingleFile(file, onProgress) {
-  const form = new FormData();
-  const fileName = file.name.split('/').pop(); // ✅ 提取纯文件名
-  form.append("file", file, fileName); // ✅ 指定文件名
-  form.append("parentId", currentIdStore.currentId); // ⭐ 传递父文件夹 ID
+  const form = new FormData()
+  form.append('file', file, file.name)
+  form.append('parentId', currentIdStore.currentId)
 
   await request.post('/uploadFile', form, {
-    onUploadProgress: onProgress,
-  });
+    onUploadProgress: onProgress
+  })
 }
 
-/**
- * 执行文件上传逻辑，支持进度条显示
- */
 async function doUpload() {
-  // 设置上传状态为true
-  uploading.value = true;
-  // 初始化进度为0
-  progress.value = 0;
+  if (!fileList.value.length) return
 
-  // 已上传文件数量
-  let uploaded = 0;
-  // 总文件数量
-  const total = fileList.value.length;
+  uploading.value = true
+  progress.value = 0
 
-  // 遍历文件列表，逐个上传
-  for (const file of fileList.value) {
-    try {
-      // 上传单个文件
-      await uploadSingleFile(file, (e) => {
-        // 如果没有总大小信息，直接返回
-        if (!e.total) return;
-        // 计算当前文件的上传进度占总进度的比例
-        const fileProgress = (e.loaded / e.total) * (100 / total);
-        // 更新总进度，确保不超过100%
+  const total = fileList.value.length
+  let finished = 0
+
+  try {
+    for (const file of fileList.value) {
+      await uploadSingleFile(file, e => {
+        if (!e.total) return
+        const single = (e.loaded / e.total) * (100 / total)
         progress.value = Math.min(
-          Math.round(uploaded * (100 / total) + fileProgress),
+          Math.round(finished * (100 / total) + single),
           100
-        );
-      });
-      // 上传成功，已上传数量+1
-      uploaded++;
-    } catch (err) {
-      // 上传失败，打印错误信息
-      console.error(err);
-      // 显示错误消息
-      ElMessage.error(`上传失败：${file.name}`);
-      // 重置上传状态
-      uploading.value = false;
-      return;
-    }
-  }
-
-  // 所有文件上传成功，设置进度为100%
-  progress.value = 100;
-  // 显示成功消息
-  ElMessage.success("全部文件上传成功!");
-  // 重置上传状态
-  uploading.value = false;
-  // 关闭上传弹窗
-  fileUploadDialog.value = false
-}
-
-
-// ========================
-// 文件夹上传相关变量和函数
-// ========================
-
-// 文件夹选择输入框的引用
-const folderInput = ref(null);
-// 文件夹树状结构数据
-const folderTree = ref([]);
-// 已勾选的文件/文件夹ID列表
-const checkedKeys = ref([]);
-// 文件夹上传弹窗显示状态
-const folderUploadDialog = ref(false);
-// 文件夹上传加载状态
-const uploadLoading = ref(false);
-
-// 文件ID到文件对象的映射，用于快速查找文件
-const fileMap = new Map();
-
-
-/**
- * 处理文件夹选择事件
- * @param {Event} e - 文件夹选择事件对象
- */
-function onFolderSelected(e) {
-  // 构建文件夹树状结构
-  buildFolderTree(Array.from(e.target.files));
-  // 打开文件夹上传弹窗
-  folderUploadDialog.value = true;
-}
-
-/**
- * 构建文件夹树状结构
- * @param {File[]} files - 包含webkitRelativePath属性的文件数组
- */
-function buildFolderTree(files) {
-  // 根节点数组
-  const root = [];
-  // 路径到节点的映射，用于快速查找父节点
-  const pathNodeMap = new Map();
-  // 节点ID计数器
-  let id = 0;
-
-  // 遍历所有文件
-  files.forEach((file) => {
-    // 按/分割文件的相对路径，得到路径片段
-    const parts = file.webkitRelativePath.split("/");
-    // 当前父节点数组
-    let current = root;
-    // 当前完整路径
-    let fullPath = "";
-
-    // 遍历路径片段，构建树状结构
-    parts.forEach((name, index) => {
-      // 更新完整路径
-      fullPath += (fullPath ? "/" : "") + name;
-      // 判断当前是否为文件节点（最后一个片段）
-      const isFile = index === parts.length - 1;
-
-      // 查找当前路径是否已存在节点
-      let node = pathNodeMap.get(fullPath);
-      if (!node) {
-        // 创建新节点
-        node = {
-          id: ++id, // 唯一ID
-          name, // 节点名称
-          children: isFile ? null : [], // 文件节点没有子节点
-          isLeaf: isFile, // 是否为叶子节点（文件）
-          size: isFile ? file.size : 0, // 文件大小，文件夹为0
-          folderId: null
-        };
-        // 将节点添加到父节点数组
-        current.push(node);
-        // 保存路径到节点的映射
-        pathNodeMap.set(fullPath, node);
-
-        // 如果是文件节点，保存到文件映射中
-        if (isFile) fileMap.set(node.id, file);
-      }
-      // 更新当前父节点数组为当前节点的子节点数组
-      current = node.children;
-    });
-  });
-
-  // 对树状结构进行排序
-  sortTree(root);
-  // 更新文件夹树状结构数据
-  folderTree.value = root;
-}
-
-/**
- * 对树状结构进行排序：文件夹在前，文件在后，同名按字母顺序
- * @param {Array} nodes - 节点数组
- */
-function sortTree(nodes) {
-  // 对当前节点数组进行排序
-  nodes.sort((a, b) => {
-    // 文件夹在前，文件在后
-    if (a.isLeaf !== b.isLeaf) return a.isLeaf ? 1 : -1;
-    // 同名按字母顺序排序
-    return a.name.localeCompare(b.name);
-  });
-
-  // 递归排序子节点
-  nodes.forEach((n) => n.children && sortTree(n.children));
-}
-
-/**
- * 处理树节点勾选事件
- * @param {Array} _ - 勾选的节点数据（未使用）
- * @param {Object} ctx - 勾选上下文，包含checkedKeys等信息
- */
-function onCheck(_, ctx) {
-  // 更新已勾选的节点ID列表
-  checkedKeys.value = ctx.checkedKeys;
-}
-
-
-
-/**
- * 发送文件夹名称给后端
- * @param {string} folderName - 文件夹名称
- */
-async function sendFolderName(folderName) {
-  try {
-    const params = new URLSearchParams();
-    params.append("folderName", folderName);
-
-    if (currentIdStore.currentId !== undefined && currentIdStore.currentId !== null) {
-      params.append("parentId", currentIdStore.currentId);
+        )
+      })
+      finished++
     }
 
-    const res = await request.post("/uploadFolder", params, {
-      headers: { "Content-Type": "application/x-www-form-urlencoded" }
-    });
-    return res.data;
-  } catch (err) {
-    console.error(err);
-    ElMessage.error(`创建文件夹失败：${folderName}`);
-    throw err;
-  }
-}
-
-
-
-/**
- * 递归遍历树节点，处理选中的文件和文件夹
- * @param {Array} nodes - 树节点数组
- */
-async function processTreeNodes(nodes) {
-  for (const node of nodes) {
-    // 是否被用户勾选？
-    const checked = checkedKeys.value.includes(node.id);
-
-
-
-    // 如果是文件夹，并且被勾选，先往后端创建文件夹
-    if (!node.isLeaf && checked) {
-      const folderId = await sendFolderName(node.name, currentIdStore.currentId);
-      node.folderId = folderId;       // ⭐ 保存该文件夹的 ID
-      currentIdStore.currentId = folderId;     // ⭐ 作为其子节点的父 ID
-    }
-
-    // 如果是文件并且被勾选 → 上传文件（带 parentId）
-    if (node.isLeaf && checked) {
-      const file = fileMap.get(node.id);
-      if (file) {
-        const form = new FormData();
-        const fileName = file.name.split('/').pop(); // ✅ 提取纯文件名
-        form.append("file", file, fileName); // ✅ 指定文件名
-        form.append("parentId", currentIdStore.currentId); // ⭐ 传递父文件夹 ID
-
-        await request.post("/uploadFile", form);
-      }
-    }
-
-    // 无论是否勾选，都要继续往下递归（因为子节点可能勾选）
-    if (node.children && node.children.length > 0) {
-      await processTreeNodes(node.children, currentIdStore.currentId);
-    }
-  }
-}
-
-
-/**
- * 上传已勾选的文件和文件夹
- */
-async function uploadSelectedFiles() {
-  // 如果没有勾选节点，直接返回
-  if (!checkedKeys.value.length) return;
-
-  // 设置上传加载状态
-  uploadLoading.value = true;
-  // 显示全局加载提示
-  const loading = ElLoading.service({ lock: true, text: "文件上传中..." });
-
-  try {
-    // 递归遍历所有节点，处理选中的节点
-    await processTreeNodes(folderTree.value);
-    // 所有文件和文件夹上传成功，显示成功消息
-    ElMessage.success("上传成功！");
-  } catch (error) {
-    // 上传过程中出错，显示错误消息
-    console.error("上传失败:", error);
-    ElMessage.error("上传过程中出错");
+    ElMessage.success('全部文件上传成功')
+    fileUploadDialog.value = false
+    fileList.value = []
+  } catch {
+    ElMessage.error('文件上传失败')
   } finally {
-    // 关闭全局加载提示
-    loading.close();
-    // 重置上传加载状态
-    uploadLoading.value = false;
+    uploading.value = false
+    progress.value = 100
   }
-
-
 }
 
+/* =====================================================
+   二、文件夹上传（Folder Upload）
+===================================================== */
 
-// ========================
-// 组件对外暴露的方法
-// ========================
+const folderInput = ref(null)
+const folderUploadDialog = ref(false)
+
+const folderTree = ref([])
+const uploadLoading = ref(false)
+const fileMap = new Map()
+
+/* 构建文件夹树 */
+
+function buildFolderTree(files) {
+  const root = []
+  const pathMap = new Map()
+  let nodeId = 0
+
+  files.forEach(file => {
+    const paths = file.webkitRelativePath.split('/')
+    let current = root
+    let fullPath = ''
+
+    paths.forEach((name, index) => {
+      fullPath += (fullPath ? '/' : '') + name
+      const isLeaf = index === paths.length - 1
+
+      let node = pathMap.get(fullPath)
+      if (!node) {
+        node = {
+          id: ++nodeId,
+          name,
+          isLeaf,
+          children: isLeaf ? null : [],
+          size: isLeaf ? file.size : 0, // 文件大小，文件夹为0
+          folderId: null
+        }
+        current.push(node)
+        pathMap.set(fullPath, node)
+        if (isLeaf) fileMap.set(node.id, file)
+      }
+      current = node.children
+    })
+  })
+
+  sortTree(root)
+  folderTree.value = root
+}
+
+function sortTree(nodes) {
+  nodes.sort((a, b) =>
+    a.isLeaf === b.isLeaf
+      ? a.name.localeCompare(b.name)
+      : a.isLeaf ? 1 : -1
+  )
+  nodes.forEach(n => n.children && sortTree(n.children))
+}
+
+/* 文件夹选择 */
+
+function onFolderSelected(e) {
+  buildFolderTree(Array.from(e.target.files))
+  folderUploadDialog.value = true
+  e.target.value = ''
+}
+
+/* 接口调用 */
+
+async function createFolder(folderName, parentId) {
+  const params = new URLSearchParams()
+  params.append('folderName', folderName)
+  params.append('parentId', parentId)
+
+  const res = await request.post('/uploadFolder', params, {
+    headers: { 'Content-Type': 'application/x-www-form-urlencoded' }
+  })
+  return res.data
+}
+
+/* 树递归上传（核心优化点） */
+
+async function processTree(nodes, parentId) {
+  for (const node of nodes) {
+    let currentParentId = parentId
+
+    if (!node.isLeaf) {
+      currentParentId = await createFolder(node.name, parentId)
+    }
+
+    if (node.isLeaf) {
+      const file = fileMap.get(node.id)
+      if (file) {
+        const form = new FormData()
+        form.append('file', file, file.name)
+        form.append('parentId', parentId)
+        await request.post('/uploadFile', form)
+      }
+    }
+
+    if (node.children) {
+      await processTree(node.children, currentParentId)
+    }
+  }
+}
+
+async function uploadSelectedFiles() {
+  uploadLoading.value = true
+  const loading = ElLoading.service({ text: '文件上传中...' })
+
+  try {
+    await processTree(folderTree.value, currentIdStore.currentId)
+    ElMessage.success('上传成功')
+    folderUploadDialog.value = false
+  } catch {
+    ElMessage.error('上传失败')
+  } finally {
+    uploadLoading.value = false
+    loading.close()
+  }
+}
+
+/* =====================================================
+   对外暴露
+===================================================== */
 
 defineExpose({
-  /**
-   * 打开文件上传弹窗
-   */
   openFileUpload() {
-    fileUploadDialog.value = true;
+    fileUploadDialog.value = true
   },
-
-  /**
-   * 打开文件夹上传弹窗
-   */
   openFolderUpload() {
-    folderInput.value.click();
+    folderInput.value?.click()
   }
-});
+})
 </script>
+
+
 <style scoped>
 /* 拖拽上传区域样式 */
 .upload-drag {
@@ -633,31 +487,3 @@ defineExpose({
   /* 顶部外边距20px */
 }
 </style>
-}
-
-/* 鼠标悬停在文件项上的样式 */
-.file-item:hover {
-background-color: #fafafa;
-/* 悬停时背景颜色变为浅灰色 */
-}
-
-/* 最后一个文件项，移除底部边框 */
-.file-item:last-child {
-border-bottom: none;
-/* 移除最后一个文件项的底部边框 */
-}
-
-/* 删除按钮样式 */
-.remove-btn {
-cursor: pointer;
-/* 鼠标悬停时显示指针 */
-color: #f56c6c;
-/* 文字颜色为红色 */
-transition: color 0.3s ease;
-/* 颜色过渡效果 */
-margin-left: 12px;
-/* 左侧外边距12px */
-}
-
-/* 删除按钮悬停样式 */
-.remove-btn:hover {
