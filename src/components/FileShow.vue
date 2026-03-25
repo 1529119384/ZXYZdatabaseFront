@@ -33,23 +33,23 @@
         <template #default="{ row }">
           <el-button-group class="mb-4">
             <el-button type="text"
-              circle><el-icon>
+              circle @click="handleMenuAction('view', row)"><el-icon>
                 <View />
               </el-icon></el-button>
             <el-button type="text"
-              circle><el-icon>
+              circle @click="handleMenuAction('share', row)"><el-icon>
                 <Share />
               </el-icon></el-button>
             <el-button type="text"
-              circle><el-icon>
+              circle @click="handleMenuAction('download', row)"><el-icon>
                 <Download />
               </el-icon></el-button>
             <el-button type="text"
-              circle><el-icon>
+              circle @click="handleMenuAction('delete', row)"><el-icon>
                 <DeleteFilled />
               </el-icon></el-button>
             <el-button type="text"
-              circle><el-icon>
+              circle @click="handleMenuAction('rename', row)"><el-icon>
                 <EditPen />
               </el-icon></el-button>
             <el-button type="text"
@@ -311,29 +311,46 @@ const closeContextMenu = () => {
  * 处理右键菜单操作
  * @param action 操作类型
  */
-const handleMenuAction = (action) => {
-  if (!selectedRow.value) return;
+const handleMenuAction = (action, row = null) => {
+  const targetRow = row || selectedRow.value;
+  if (!targetRow) return;
 
   switch (action) {
     case 'favorite':
       // 收藏逻辑
-      console.log('收藏文件:', selectedRow.value);
+      console.log('收藏文件:', targetRow);
       break;
     case 'share':
       // 分享逻辑
-      console.log('分享文件:', selectedRow.value);
+      console.log('分享文件:', targetRow);
       break;
     case 'copy':
       // 复制逻辑
-      console.log('复制文件:', selectedRow.value);
+      console.log('复制文件:', targetRow);
       break;
     case 'remove':
       // 移动逻辑
-      console.log('移动文件:', selectedRow.value);
+      console.log('移动文件:', targetRow);
       break;
     case 'lock':
       // 上锁逻辑
-      console.log('上锁文件:', selectedRow.value);
+      console.log('上锁文件:', targetRow);
+      break;
+    case 'delete':
+      // 删除逻辑
+      console.log('删除文件:', targetRow);
+      break;
+    case 'download':
+      // 下载逻辑
+      console.log('下载文件:', targetRow);
+      break;
+    case 'rename':
+      // 重命名逻辑
+      console.log('重命名文件:', targetRow);
+      break;
+    case 'view':
+      // 预览逻辑
+      console.log('预览文件:', targetRow);
       break;
     default:
       console.log('操作错误:');
