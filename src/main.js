@@ -14,13 +14,21 @@ for (const [key, component] of Object.entries(ElementPlusIconsVue)) {
 app.config.globalProperties.$fmtTime = iso =>
   new Date(iso).toLocaleString('zh-CN', { hour12: false }).replace(/\//g, '-');
 // 大小全局变量
-app.config.globalProperties.$formatSize = (bytes) => {
-  if (!bytes) return '0 B'
+app.config.globalProperties.$formatSize = (size) => {
+  if (size === null || size === undefined || size === '') return '-'
+  const bytes = Number(size)
+  if (Number.isNaN(bytes) || bytes < 0) return '-'
+  if (bytes === 0) return '0 B'
   const units = ['B', 'KB', 'MB', 'GB', 'TB']
-  const i = Math.floor(Math.log(bytes) / Math.log(1024))
-  return (bytes / Math.pow(1024, i)).toFixed(1) + ' ' + units[i]
+  const unitIndex = Math.min(
+    Math.floor(Math.log(bytes) / Math.log(1024)),
+    units.length - 1
+  )
+  if (unitIndex === 0) {
+    return `${bytes} B`
+  }
+  return `${(bytes / Math.pow(1024, unitIndex)).toFixed(2)} ${units[unitIndex]}`
 }
 app.use(createPinia()) 
 app.use(router)
 app.mount('#app')
-
