@@ -147,7 +147,7 @@
       <el-table-column label="大小"
         width="120">
         <template #default="{ row }">
-          {{ row.fileSize ?? '-' }}
+          {{ $formatSize(row.fileSize) }}
         </template>
       </el-table-column>
     </el-table>
@@ -238,6 +238,7 @@ const transformFileList = (data) => {
     category: item.category,
     modifyTime: item.modifyTime,
     fileSize: item.fileSize,
+    fileUrl: item.fileUrl,
     // 下面两个字段在列表展示阶段不再直接使用，置为 undefined 只是明确表明已做过转换。
     originalName: undefined,
     fileType: undefined,
@@ -342,6 +343,22 @@ const closeContextMenu = () => {
   dropdownRef.value?.handleClose()
 }
 
+const downloadFile = (row) => {
+  if (!row || row.type === 0 || !row.fileUrl) {
+    console.warn('当前行不可下载或缺少下载地址:', row)
+    return
+  }
+
+  const link = document.createElement('a')
+  link.href = row.fileUrl
+  link.download = row.fileName || ''
+  link.target = '_blank'
+  link.rel = 'noopener'
+  document.body.appendChild(link)
+  link.click()
+  document.body.removeChild(link)
+}
+
 const handleMenuAction = (action, row) => {
   // 所有入口都显式传 row，不再依赖 selectedRow 这类额外状态。
   if (!row) return
@@ -367,7 +384,7 @@ const handleMenuAction = (action, row) => {
       console.log('删除文件:', row)
       break
     case 'download':
-      console.log('下载文件:', row)
+      downloadFile(row)
       break
     case 'rename':
       console.log('重命名文件:', row)
