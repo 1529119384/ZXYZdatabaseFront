@@ -98,13 +98,13 @@
     </el-header>
 
     <FileShow ref="fileShowRef" />
-    <CreateFolder ref="createFolderRef"/>
+    <CreateFolder ref="createFolderRef" />
     <!-- 上传组件 -->
   </el-container>
 </template>
 
 <script setup>
-import requst from '@/utils/request';
+import request from '@/utils/request';
 import { Search } from '@element-plus/icons-vue'
 import { ref } from 'vue';
 // 引入上传组件
@@ -144,7 +144,7 @@ const createFolder = () => {
   display: flex;
   align-items: center;
   border-radius: var(--el-border-radius-round);
-  box-shadow: none t;
+  box-shadow: none;
 }
 
 .input {
