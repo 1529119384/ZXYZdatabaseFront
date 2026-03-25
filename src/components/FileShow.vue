@@ -317,23 +317,23 @@ const handleMenuAction = (action) => {
   switch (action) {
     case 'favorite':
       // 收藏逻辑
-      console.log('重命名文件:', selectedRow.value);
+      console.log('收藏文件:', selectedRow.value);
       break;
     case 'share':
       // 分享逻辑
-      console.log('重命名文件:', selectedRow.value);
+      console.log('分享文件:', selectedRow.value);
       break;
     case 'copy':
       // 复制逻辑
-      console.log('重命名文件:', selectedRow.value);
+      console.log('复制文件:', selectedRow.value);
       break;
     case 'remove':
       // 移动逻辑
-      console.log('删除文件:', selectedRow.value);
+      console.log('移动文件:', selectedRow.value);
       break;
     case 'lock':
       // 上锁逻辑
-      console.log('分享文件:', selectedRow.value);
+      console.log('上锁文件:', selectedRow.value);
       break;
     default:
       console.log('操作错误:');
