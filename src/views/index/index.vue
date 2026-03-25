@@ -104,7 +104,7 @@
 </template>
 
 <script setup>
-import request from '@/utils/request';
+// import request from '@/utils/request';
 import { Search } from '@element-plus/icons-vue'
 import { ref } from 'vue';
 // 引入上传组件
