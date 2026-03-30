@@ -1,3 +1,7 @@
-import request from "../utils/request";
+import request from '@/utils/request'
 
-export const fetchList = () => request.get("/api/files");
+export const fetchFileList = (parentId) => {
+  return request.get('/getFileList', {
+    params: { parentId },
+  })
+}
