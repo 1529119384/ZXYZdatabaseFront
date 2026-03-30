@@ -1,4 +1,5 @@
 import axios from "axios";
+import { ElMessage } from 'element-plus';
 // request.js
 import router from '@/router/index.js';   // 这里路径换成你项目里 router/index.js 的实际位置
 
@@ -6,6 +7,20 @@ const request = axios.create({
   baseURL: "http://localhost:8080",
   timeout: 5000
 });
+
+let lastErrorMessage = '';
+let lastErrorTime = 0;
+
+function showErrorMessage(message) {
+  const now = Date.now();
+  if (message === lastErrorMessage && now - lastErrorTime < 1500) {
+    return;
+  }
+
+  lastErrorMessage = message;
+  lastErrorTime = now;
+  ElMessage.error(message);
+}
 
 // 请求拦截器
 request.interceptors.request.use(
