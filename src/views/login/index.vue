@@ -60,7 +60,7 @@ async function login() {
 
   console.log("登录成功，收到结果：", res)
   if (res.data && res.data.tokenValue) {
-    localStorage.setItem(res.data.tokenName, JSON.stringify({ token: res.data.tokenValue }))
+    localStorage.setItem('loginUser', JSON.stringify({ token: res.data.tokenValue }))
     const redirect = route.query.redirect || '/index'
     router.replace(redirect)
   }
