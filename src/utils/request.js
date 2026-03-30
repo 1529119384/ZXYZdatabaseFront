@@ -48,6 +48,19 @@ request.interceptors.response.use(
   (error) => {
     if (error.response?.status === 401) {
       router.replace('/login');
+      return Promise.reject(error);
+    }
+
+    if (!error.response) {
+      const message = error.code === 'ECONNABORTED'
+        ? '请求超时，请检查网络或稍后重试'
+        : '网络未连接或服务器异常，请稍后重试';
+      showErrorMessage(message);
+      return Promise.reject(error);
+    }
+
+    if (error.response.status >= 500) {
+      showErrorMessage('服务器异常，请稍后重试');
     }
     return Promise.reject(error);
   }
