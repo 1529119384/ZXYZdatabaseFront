@@ -1,5 +1,6 @@
 <template>
   <Uploader ref="uploaderRef" />
+  <DeleteConfirmDialog ref="deleteConfirmRef" />
   <el-container>
     <el-header height="32px"
       class="header-wrap">
@@ -85,7 +86,9 @@
           </el-icon>锁定</el-button>
         <el-button type="primary"
           plain
-          round>
+          round
+          :disabled="!hasSelection"
+          @click="handleBatchDelete">
           <el-icon>
             <DeleteFilled />
           </el-icon>删除</el-button>
@@ -97,7 +100,10 @@
         :suffix-icon="Search" />
     </el-header>
 
-    <FileShow ref="fileShowRef" />
+    <FileShow ref="fileShowRef"
+      :search-text="searchText"
+      @selection-change="handleSelectionChange"
+      @row-action="handleRowAction" />
     <CreateFolder ref="createFolderRef" />
     <!-- 上传组件 -->
   </el-container>
@@ -106,14 +112,20 @@
 <script setup>
 // import request from '@/utils/request';
 import { Search } from '@element-plus/icons-vue'
+import { ElMessage } from 'element-plus'
 import { ref } from 'vue';
 // 引入上传组件
 import Uploader from '@/components/Uploader.vue';
 import FileShow from '@/components/FileShow.vue';
 import CreateFolder from '@/components/CreateFolder.vue';
+import DeleteConfirmDialog from '@/components/DeleteConfirmDialog.vue';
+import { deleteFileById } from '@/api/files';
 
 const searchText = ref('')
 const fileShowRef = ref(null);
+const deleteConfirmRef = ref(null);
+const selectedRows = ref([]);
+const hasSelection = ref(false);
 const refresh = () => {
   fileShowRef.value.refresh()
 }
@@ -133,6 +145,73 @@ const openFolderUpload = () => {
 const createFolderRef = ref(null);
 const createFolder = () => {
   createFolderRef.value.openCreateFolder();
+}
+
+async function handleDelete(row) {
+  const confirmed = await deleteConfirmRef.value?.open({
+    fileName: row.fileName,
+    type: row.type,
+  })
+  if (!confirmed) {
+    return
+  }
+
+  try {
+    await deleteFileById(row.id)
+    deleteConfirmRef.value?.close()
+    ElMessage.success('删除成功')
+    refresh()
+  } catch (error) {
+    deleteConfirmRef.value?.close()
+    console.error('删除文件失败:', error)
+    ElMessage.error('删除失败，请稍后重试')
+  }
+}
+
+async function handleBatchDelete() {
+  if (!selectedRows.value.length) {
+    ElMessage.warning('请先选择要删除的文件')
+    return
+  }
+
+  const confirmed = await deleteConfirmRef.value?.open({
+    message: `确认删除已选中的 ${selectedRows.value.length} 项吗？`,
+    tip: '删除后文件会进入回收站，可在回收站中恢复或彻底删除。',
+    confirmText: '确认删除',
+  })
+  if (!confirmed) {
+    return
+  }
+
+  try {
+    for (const row of selectedRows.value) {
+      await deleteFileById(row.id)
+    }
+    deleteConfirmRef.value?.close()
+    ElMessage.success(`已删除 ${selectedRows.value.length} 项`)
+    selectedRows.value = []
+    hasSelection.value = false
+    refresh()
+    fileShowRef.value?.clearSelection()
+  } catch (error) {
+    deleteConfirmRef.value?.close()
+    console.error('批量删除文件失败:', error)
+    ElMessage.error('批量删除失败，请稍后重试')
+  }
+}
+
+function handleSelectionChange(rows) {
+  selectedRows.value = rows
+  hasSelection.value = rows.length > 0
+}
+
+function handleRowAction({ action, row }) {
+  if (action === 'delete') {
+    handleDelete(row)
+    return
+  }
+
+  console.log(`${action} 文件:`, row)
 }
 </script>
 
