@@ -5,3 +5,12 @@ export const fetchFileList = (parentId) => {
     params: { parentId },
   })
 }
+
+export const deleteFileById = (id) => {
+  const params = new URLSearchParams()
+  params.append('fileId', id)
+
+  return request.post('/logicalDelete', params, {
+    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+  })
+}
