@@ -59,6 +59,12 @@
               </el-icon>
               <span>系统设置</span>
             </el-menu-item>
+            <el-menu-item index="tools">
+              <el-icon>
+                <Tools />
+              </el-icon>
+              <span>工具箱</span>
+            </el-menu-item>
           </el-menu>
         </el-aside>
         <el-main>
