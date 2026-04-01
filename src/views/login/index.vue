@@ -1,4 +1,4 @@
-<template>
+﻿<template>
   <div class="common-layout">
     <el-container>
       <el-header class="title">欢迎来到指绣云章</el-header>
@@ -33,36 +33,54 @@
   </div>
 </template>
 
-
 <script setup>
-import { reactive, ref } from 'vue'
+import { onMounted, onUnmounted, reactive, ref } from 'vue'
 import request from '@/utils/request'
-
+import { setLoginUser } from '@/utils/auth'
 import { useRouter, useRoute } from 'vue-router'
+
 const router = useRouter()
 const route = useRoute()
 
 const size = ref('large')
 const labelPosition = ref('left')
+const loggingIn = ref(false)
 const sizeForm = reactive({
   password: '',
   username: ''
 })
 
-document.addEventListener("keydown", function (e) {
-  if (e.key === "Enter") {
+const handleKeydown = (e) => {
+  if (e.key === 'Enter') {
     login()
   }
-})
-async function login() {
-  // console.log(sizeForm)
-  const res = await request.post('/login', sizeForm);
+}
 
-  console.log("登录成功，收到结果：", res)
-  if (res.data && res.data.tokenValue) {
-    localStorage.setItem('loginUser', JSON.stringify({ token: res.data.tokenValue }))
-    const redirect = route.query.redirect || '/index'
-    router.replace(redirect)
+onMounted(() => {
+  document.addEventListener('keydown', handleKeydown)
+})
+
+onUnmounted(() => {
+  document.removeEventListener('keydown', handleKeydown)
+})
+
+async function login() {
+  if (loggingIn.value) {
+    return
+  }
+
+  loggingIn.value = true
+
+  try {
+    const res = await request.post('/login', sizeForm)
+
+    if (res.data && res.data.tokenValue) {
+      setLoginUser({ token: res.data.tokenValue })
+      const redirect = route.query.redirect || '/index'
+      router.replace(redirect)
+    }
+  } finally {
+    loggingIn.value = false
   }
 }
 </script>
@@ -97,15 +115,12 @@ async function login() {
   font-family: "BoutiqueBitmap9x9_3D", "Source Han Sans CN", "Microsoft YaHei", sans-serif;
 }
 
-/* 让“用户名：”“密 码：”两个字号、颜色都听你的 */
 .input :deep(.el-input__prefix) {
   font-size: 24px;
   color: rgba(69, 159, 201, 1);
   font-family: "BoutiqueBitmap", "Source Han Sans CN", "Microsoft YaHei", sans-serif;
   margin-right: 8px;
-  /* 与输入框距离 */
   white-space: nowrap;
-  /* 防止被挤换行 */
 }
 
 .form {
@@ -116,13 +131,11 @@ async function login() {
   align-items: center;
 }
 
-/* 账号/密码输入框样式 */
 .input {
   width: 700px;
   height: 60px;
 }
 
-/* 统一设置输入框相关组件的样式 */
 .input :deep(.el-input__wrapper) {
   background: rgba(255, 255, 255, 0.75);
 
@@ -149,7 +162,6 @@ async function login() {
   font-family: "BoutiqueBitmap", "Source Han Sans CN", "Microsoft YaHei", sans-serif;
 }
 
-/* 确保密码按钮垂直居中 */
 .input :deep(.el-input__suffix-inner) {
   display: flex;
   align-items: center;

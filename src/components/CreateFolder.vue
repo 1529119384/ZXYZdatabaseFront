@@ -1,4 +1,4 @@
-<template>
+﻿<template>
   <el-dialog v-model="createFolderDialog"
     title="新建文件夹"
     width="300"
@@ -13,55 +13,76 @@
       focusable
       clearable
       style="width: 240px"
-      placeholder="请输入文件夹名称" />
+      placeholder="请输入文件夹名称"
+      @keyup.enter="handleSubmit" />
 
     <template #footer
       center>
       <div class="dialog-footer">
+        <el-button
+          @click="close">
+          取消
+        </el-button>
         <el-button type="primary"
+          :loading="submitting"
+          :disabled="submitting"
           center
-          @click="createFolder()">
+          @click="handleSubmit">
           创建文件夹
         </el-button>
-
-
       </div>
     </template>
 
   </el-dialog>
-
-
-
 </template>
+
 <script setup>
-import { ref } from 'vue';
-const createFolderDialog = ref(false);
-const newFolderName = ref('新建文件夹');
-import request from '@/utils/request';
-import { useCurrentIdStore } from '@/store/currentId';
-const currentIdStore = useCurrentIdStore()
+import { ref } from 'vue'
+import { ElMessage } from 'element-plus'
 
-function createFolder() {
-  const params = new URLSearchParams();
-  params.append('folderName', newFolderName.value);
-  params.append('parentId', currentIdStore.currentId);
+const emit = defineEmits(['submit'])
 
-  request.post('/createFolder', params)
-    .then((res) => {
-      console.log('创建文件夹成功:', res);
-      createFolderDialog.value = false;
-    })
-    .catch((error) => {
-      console.error('创建文件夹失败:', error);
-    });
+const createFolderDialog = ref(false)
+const newFolderName = ref('新建文件夹')
+const submitting = ref(false)
+
+function handleSubmit() {
+  const folderName = newFolderName.value.trim()
+  if (!folderName) {
+    ElMessage.warning('文件夹名称不能为空')
+    return
+  }
+
+  if (submitting.value) {
+    return
+  }
+
+  emit('submit', folderName)
+}
+
+function openCreateFolder(defaultName = '新建文件夹') {
+  newFolderName.value = defaultName
+  submitting.value = false
+  createFolderDialog.value = true
+}
+
+function close() {
+  if (submitting.value) {
+    return
+  }
+
+  createFolderDialog.value = false
+}
+
+function setSubmitting(value) {
+  submitting.value = value
 }
 
 defineExpose({
-  openCreateFolder() {
-    createFolderDialog.value = true;
-  },
+  openCreateFolder,
+  close,
+  setSubmitting,
 })
-
 </script>
 
 <style></style>

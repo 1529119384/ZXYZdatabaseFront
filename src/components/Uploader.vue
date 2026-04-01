@@ -139,8 +139,8 @@
 
 <script setup>
 import { computed, ref } from 'vue'
-import request from '@/utils/request'
 import { ElLoading, ElMessage } from 'element-plus'
+import { createFolder } from '@/api/files'
 import { useCurrentIdStore } from '@/store/currentId'
 import { getErrorDetail, logUploadError, uploadFileWithPresign } from '@/services/upload'
 
@@ -429,13 +429,11 @@ function handleCancelFolderUpload() {
   folderUploadDialog.value = false
 }
 
-async function createFolder(folderName, parentId) {
-  const params = new URLSearchParams()
-  params.append('folderName', folderName)
-  params.append('parentId', parentId)
-
-  const res = await request.post('/uploadFolder', params, {
-    headers: { 'Content-Type': 'application/x-www-form-urlencoded' }
+async function createFolderByScene(folderName, parentId) {
+  const res = await createFolder({
+    folderName,
+    parentId,
+    scene: 'upload',
   })
   return res.data
 }
@@ -449,7 +447,7 @@ async function processTree(nodes, parentId) {
 
     if (!node.isLeaf) {
       try {
-        currentParentId = await createFolder(node.name, parentId)
+        currentParentId = await createFolderByScene(node.name, parentId)
       } catch (error) {
         logUploadError('创建文件夹失败', { name: node.name, size: 0 }, error, { parentId })
         failList.push({

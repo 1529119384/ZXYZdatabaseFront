@@ -1,4 +1,4 @@
-<template>
+﻿<template>
   <Uploader ref="uploaderRef"
     @success="refresh" />
   <DeleteConfirmDialog ref="deleteConfirmRef" />
@@ -29,7 +29,7 @@
         <el-button type="primary"
           plain
           round
-          @click="createFolder()">
+          @click="openCreateFolderDialog">
           <el-icon>
             <Upload />
           </el-icon>新建文件夹</el-button>
@@ -105,47 +105,64 @@
       :search-text="searchText"
       @selection-change="handleSelectionChange"
       @row-action="handleRowAction" />
-    <CreateFolder ref="createFolderRef" />
-    <!-- 上传组件 -->
+    <CreateFolder ref="createFolderRef"
+      @submit="handleCreateFolder" />
   </el-container>
 </template>
 
 <script setup>
-// import request from '@/utils/request';
 import { Search } from '@element-plus/icons-vue'
 import { ElMessage } from 'element-plus'
-import { ref } from 'vue';
-// 引入上传组件
-import Uploader from '@/components/Uploader.vue';
-import FileShow from '@/components/FileShow.vue';
-import CreateFolder from '@/components/CreateFolder.vue';
-import DeleteConfirmDialog from '@/components/DeleteConfirmDialog.vue';
-import { deleteFileById } from '@/api/files';
+import { ref } from 'vue'
+import Uploader from '@/components/Uploader.vue'
+import FileShow from '@/components/FileShow.vue'
+import CreateFolder from '@/components/CreateFolder.vue'
+import DeleteConfirmDialog from '@/components/DeleteConfirmDialog.vue'
+import { createFolder, deleteFileById } from '@/api/files'
+import { useCurrentIdStore } from '@/store/currentId'
 
+const currentIdStore = useCurrentIdStore()
 const searchText = ref('')
-const fileShowRef = ref(null);
-const deleteConfirmRef = ref(null);
-const selectedRows = ref([]);
-const hasSelection = ref(false);
+const fileShowRef = ref(null)
+const deleteConfirmRef = ref(null)
+const selectedRows = ref([])
+const hasSelection = ref(false)
+const uploaderRef = ref(null)
+const createFolderRef = ref(null)
+
 const refresh = () => {
-  fileShowRef.value.refresh()
+  fileShowRef.value?.refresh()
 }
-// const fileShowRef
 
-
-// 上传组件引用
-const uploaderRef = ref(null);
 const openFileUpload = () => {
-  uploaderRef.value.openFileUpload();
-};
+  uploaderRef.value?.openFileUpload()
+}
 
 const openFolderUpload = () => {
-  uploaderRef.value.openFolderUpload();
-};
+  uploaderRef.value?.openFolderUpload()
+}
 
-const createFolderRef = ref(null);
-const createFolder = () => {
-  createFolderRef.value.openCreateFolder();
+const openCreateFolderDialog = () => {
+  createFolderRef.value?.openCreateFolder()
+}
+
+async function handleCreateFolder(folderName) {
+  createFolderRef.value?.setSubmitting(true)
+
+  try {
+    await createFolder({
+      folderName,
+      parentId: currentIdStore.currentId,
+    })
+    createFolderRef.value?.setSubmitting(false)
+    createFolderRef.value?.close()
+    ElMessage.success('创建成功')
+    await refresh()
+  } catch (error) {
+    console.error('创建文件夹失败:', error)
+    ElMessage.error('创建失败，请稍后重试')
+    createFolderRef.value?.setSubmitting(false)
+  }
 }
 
 async function handleDelete(row) {
@@ -234,11 +251,8 @@ function handleRowAction({ action, row }) {
 .header-wrap {
   display: flex;
   justify-content: flex-end;
-  /* 所有子元素整体靠右 */
   align-items: center;
-  /* 垂直居中 */
   gap: 10px;
-  /* 各按钮/input 之间的间距，可省略 */
 }
 
 .custom {

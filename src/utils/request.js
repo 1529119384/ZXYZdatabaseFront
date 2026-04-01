@@ -1,84 +1,90 @@
-import axios from "axios";
-import { ElMessage } from 'element-plus';
-// request.js
-import router from '@/router/index.js';   // 这里路径换成你项目里 router/index.js 的实际位置
+﻿import axios from 'axios'
+import { ElMessage } from 'element-plus'
+import router from '@/router/index.js'
+import { clearLoginUser, getToken } from '@/utils/auth'
 
 const request = axios.create({
-  baseURL: "http://localhost:8080",
-  timeout: 5000
-});
+  baseURL: 'http://localhost:8080',
+  timeout: 5000,
+})
 
-let lastErrorMessage = '';
-let lastErrorTime = 0;
+let lastErrorMessage = ''
+let lastErrorTime = 0
 
 function showErrorMessage(message) {
-  const now = Date.now();
+  const now = Date.now()
   if (message === lastErrorMessage && now - lastErrorTime < 1500) {
-    return;
+    return
   }
 
-  lastErrorMessage = message;
-  lastErrorTime = now;
-  ElMessage.error(message);
+  lastErrorMessage = message
+  lastErrorTime = now
+  ElMessage.error(message)
 }
 
-// 请求拦截器
+function redirectToLogin() {
+  clearLoginUser()
+
+  const currentRoute = router.currentRoute.value
+  const targetPath = currentRoute?.fullPath || '/index'
+
+  if (currentRoute?.name === 'login') {
+    return
+  }
+
+  router.replace({
+    name: 'login',
+    query: { redirect: targetPath },
+  })
+}
+
 request.interceptors.request.use(
   (config) => {
-    const loginUser = JSON.parse(localStorage.getItem("loginUser"))
-    // console.log(loginUser);
+    const token = getToken()
 
-    if (loginUser && loginUser.token) {
-      config.headers["loginUser"] = loginUser.token;
+    if (token) {
+      config.headers.loginUser = token
     }
-    // console.log("最终发送的 headers =", config.headers)
-    return config;   // ✔ 必须返回 config
-  },
-  (error) => {
-    return Promise.reject(error);
-  }
-);
 
-// 响应拦截器
-// 响应拦截器
+    return config
+  },
+  (error) => Promise.reject(error),
+)
+
 request.interceptors.response.use(
   (response) => {
-    const res = response.data;
-    if (res.code === 1) { return res };          // 业务正常
-
-    // 未登录
-    if (res.message === 'NO_LOGIN') {
-      // 取当前路径，登录后再回来
-      const currentRoute = router.currentRoute.value;
-      const redirect = encodeURIComponent(currentRoute.fullPath);
-      router.replace(`/login?redirect=${redirect}`);
-      return Promise.reject(new Error('NO_LOGIN'));
+    const res = response.data
+    if (res.code === 1) {
+      return res
     }
 
-    // 其他业务错误
-    return Promise.reject(new Error(res.message || 'Error'));
-  },
+    if (res.message === 'NO_LOGIN') {
+      redirectToLogin()
+      return Promise.reject(new Error('NO_LOGIN'))
+    }
 
-  // 网络/500/401 等
+    return Promise.reject(new Error(res.message || 'Error'))
+  },
   (error) => {
     if (error.response?.status === 401) {
-      router.replace('/login');
-      return Promise.reject(error);
+      redirectToLogin()
+      return Promise.reject(error)
     }
 
     if (!error.response) {
       const message = error.code === 'ECONNABORTED'
         ? '请求超时，请检查网络或稍后重试'
-        : '网络未连接或服务器异常，请稍后重试';
-      showErrorMessage(message);
-      return Promise.reject(error);
+        : '网络未连接或服务异常，请稍后重试'
+      showErrorMessage(message)
+      return Promise.reject(error)
     }
 
     if (error.response.status >= 500) {
-      showErrorMessage('服务器异常，请稍后重试');
+      showErrorMessage('服务器异常，请稍后重试')
     }
-    return Promise.reject(error);
-  }
-);
 
-export default request;
+    return Promise.reject(error)
+  },
+)
+
+export default request

@@ -1,21 +1,31 @@
 ﻿import request from '@/utils/request'
+
+function createFormData(params) {
+  const searchParams = new URLSearchParams()
+  Object.entries(params).forEach(([key, value]) => {
+    searchParams.append(key, value)
+  })
+  return searchParams
+}
+
 export const fetchFileList = (parentId) => {
   return request.get('/getFileList', {
     params: { parentId },
   })
 }
+
 export const getFileDownloadUrl = (fileId) => {
   return request.get('/getFileDownloadUrl', {
     params: { fileId },
   })
 }
+
 export const getUploadSign = (originalName) => {
-  const params = new URLSearchParams()
-  params.append('originalName', originalName)
-  return request.post('/getUploadSign', params, {
+  return request.post('/getUploadSign', createFormData({ originalName }), {
     headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
   })
 }
+
 export const uploadToOss = async (uploadUrl, file, options = {}) => {
   const { onUploadProgress, contentType, contentDisposition } = options
   return new Promise((resolve, reject) => {
@@ -65,6 +75,7 @@ export const uploadToOss = async (uploadUrl, file, options = {}) => {
     xhr.send(file)
   })
 }
+
 export const confirmUpload = ({ objectKey, originalName, fileSize, parentId }) => {
   return request.post('/confirmUpload', {
     objectKey,
@@ -73,23 +84,34 @@ export const confirmUpload = ({ objectKey, originalName, fileSize, parentId }) =
     parentId,
   })
 }
+
+export const createFolder = ({ folderName, parentId, scene = 'default' }) => {
+  const url = scene === 'upload' ? '/uploadFolder' : '/createFolder'
+  return request.post(
+    url,
+    createFormData({ folderName, parentId }),
+    {
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+    },
+  )
+}
+
 export const deleteFileById = (id) => {
-  const params = new URLSearchParams()
-  params.append('fileId', id)
-  return request.post('/logicalDelete', params, {
+  return request.post('/logicalDelete', createFormData({ fileId: id }), {
     headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
   })
 }
+
 export const fetchRecycleList = () => {
   return request.get('/getRecycleList')
 }
+
 export const restoreFiles = (fileId) => {
-  const params = new URLSearchParams()
-  params.append('fileId', fileId)
-  return request.post('/restoreFiles', params, {
+  return request.post('/restoreFiles', createFormData({ fileId }), {
     headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
   })
 }
+
 export const deleteFilesForever = (ids) => {
   return request.post('/reallyDelete', { ids })
 }
