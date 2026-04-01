@@ -142,6 +142,9 @@ import { computed, ref } from 'vue'
 import request from '@/utils/request'
 import { ElLoading, ElMessage } from 'element-plus'
 import { useCurrentIdStore } from '@/store/currentId'
+import { getErrorDetail, logUploadError, uploadFileWithPresign } from '@/services/upload'
+
+const emit = defineEmits(['success'])
 
 const currentIdStore = useCurrentIdStore()
 
@@ -270,13 +273,51 @@ function handleCancelFileUpload() {
 }
 
 async function uploadSingleFile(file, onProgress) {
-  const form = new FormData()
-  form.append('file', file, file.name)
-  form.append('parentId', currentIdStore.currentId)
+  await uploadFileWithPresign(file, currentIdStore.currentId, onProgress)
+}
 
-  await request.post('/uploadFile', form, {
-    onUploadProgress: onProgress
-  })
+function formatUploadSummary(successList, failList, successText) {
+  const summary = [`成功 ${successList.length} 个`, `失败 ${failList.length} 个`]
+  if (failList.length) {
+    const failNames = failList.slice(0, 3).map(item => item.fileName).join('、')
+    summary.push(`失败文件：${failNames}${failList.length > 3 ? ' 等' : ''}`)
+  } else if (successText) {
+    summary.unshift(successText)
+  }
+
+  return summary.join('，')
+}
+
+async function uploadFilesWithResult(filesToUpload) {
+  const successList = []
+  const failList = []
+  const total = filesToUpload.length
+
+  for (let index = 0; index < filesToUpload.length; index++) {
+    const file = filesToUpload[index]
+
+    try {
+      await uploadSingleFile(file, e => {
+        if (!e.total) return
+        const completed = index * (100 / total)
+        const single = (e.loaded / e.total) * (100 / total)
+        progress.value = Math.min(Math.round(completed + single), 99)
+      })
+      successList.push({
+        fileName: file.name,
+        size: file.size
+      })
+      progress.value = Math.min(Math.round(((index + 1) / total) * 100), 100)
+    } catch (error) {
+      failList.push({
+        fileName: file.name,
+        size: file.size,
+        message: getErrorDetail(error)
+      })
+    }
+  }
+
+  return { successList, failList }
 }
 
 async function doUpload() {
@@ -286,27 +327,35 @@ async function doUpload() {
   progress.value = 0
 
   const filesToUpload = [...fileList.value]
-  const total = filesToUpload.length
-  let finished = 0
 
   try {
-    for (const file of filesToUpload) {
-      await uploadSingleFile(file, e => {
-        if (!e.total) return
-        const single = (e.loaded / e.total) * (100 / total)
-        progress.value = Math.min(
-          Math.round(finished * (100 / total) + single),
-          99
-        )
-      })
-      finished++
+    const { successList, failList } = await uploadFilesWithResult(filesToUpload)
+
+    progress.value = successList.length === filesToUpload.length ? 100 : progress.value
+
+    if (successList.length) {
+      emit('success')
     }
 
-    progress.value = 100
-    ElMessage.success('全部文件上传成功')
-    fileUploadDialog.value = false
-  } catch {
-    ElMessage.error('文件上传失败，请重试')
+    if (!failList.length) {
+      ElMessage.success(formatUploadSummary(successList, failList, '全部文件上传成功'))
+      fileUploadDialog.value = false
+      return
+    }
+
+    if (successList.length) {
+      ElMessage.warning(formatUploadSummary(successList, failList))
+      fileUploadDialog.value = false
+      return
+    }
+
+    ElMessage.error(formatUploadSummary(successList, failList))
+  } catch (error) {
+    console.error('[文件上传流程失败]', {
+      files: filesToUpload.map(file => file.name),
+      message: error?.message
+    })
+    ElMessage.error(error?.message || '文件上传失败，请重试')
   } finally {
     uploading.value = false
   }
@@ -392,29 +441,54 @@ async function createFolder(folderName, parentId) {
 }
 
 async function processTree(nodes, parentId) {
+  const successList = []
+  const failList = []
+
   for (const node of nodes) {
     let currentParentId = parentId
 
     if (!node.isLeaf) {
-      currentParentId = await createFolder(node.name, parentId)
+      try {
+        currentParentId = await createFolder(node.name, parentId)
+      } catch (error) {
+        logUploadError('创建文件夹失败', { name: node.name, size: 0 }, error, { parentId })
+        failList.push({
+          fileName: node.name,
+          message: `创建文件夹失败：${getErrorDetail(error)}`
+        })
+        continue
+      }
     }
 
     if (node.isLeaf) {
       const file = fileMap.get(node.id)
       if (file) {
         currentFolderUploadName.value = file.name
-        const form = new FormData()
-        form.append('file', file, file.name)
-        form.append('parentId', parentId)
-        await request.post('/uploadFile', form)
-        uploadedFolderFileCount.value += 1
+        try {
+          await uploadFileWithPresign(file, parentId)
+          uploadedFolderFileCount.value += 1
+          successList.push({
+            fileName: file.name,
+            size: file.size
+          })
+        } catch (error) {
+          failList.push({
+            fileName: file.name,
+            size: file.size,
+            message: getErrorDetail(error)
+          })
+        }
       }
     }
 
     if (node.children) {
-      await processTree(node.children, currentParentId)
+      const childResult = await processTree(node.children, currentParentId)
+      successList.push(...childResult.successList)
+      failList.push(...childResult.failList)
     }
   }
+
+  return { successList, failList }
 }
 
 async function uploadSelectedFiles() {
@@ -426,11 +500,33 @@ async function uploadSelectedFiles() {
   const loading = ElLoading.service({ text: '文件上传中...' })
 
   try {
-    await processTree(folderTree.value, currentIdStore.currentId)
-    ElMessage.success('上传成功')
-    folderUploadDialog.value = false
-  } catch {
-    ElMessage.error('上传失败，请重试')
+    const { successList, failList } = await processTree(folderTree.value, currentIdStore.currentId)
+
+    if (successList.length) {
+      emit('success')
+    }
+
+    if (!failList.length) {
+      ElMessage.success(formatUploadSummary(successList, failList, '上传成功'))
+      folderUploadDialog.value = false
+      return
+    }
+
+    if (successList.length) {
+      ElMessage.warning(formatUploadSummary(successList, failList))
+      folderUploadDialog.value = false
+      return
+    }
+
+    ElMessage.error(formatUploadSummary(successList, failList))
+  } catch (error) {
+    console.error('[文件夹上传流程失败]', {
+      currentFile: currentFolderUploadName.value,
+      uploadedCount: uploadedFolderFileCount.value,
+      total: folderStats.value.fileCount,
+      message: error?.message
+    })
+    ElMessage.error(error?.message || '上传失败，请重试')
   } finally {
     uploadLoading.value = false
     loading.close()

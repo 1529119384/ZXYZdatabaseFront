@@ -1,5 +1,6 @@
 <template>
-  <Uploader ref="uploaderRef" />
+  <Uploader ref="uploaderRef"
+    @success="refresh" />
   <DeleteConfirmDialog ref="deleteConfirmRef" />
   <el-container>
     <el-header height="32px"
