@@ -176,7 +176,8 @@
 import { computed, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { ArrowRight } from '@element-plus/icons-vue'
-import { fetchFileList, fetchRecycleList } from '@/api/files'
+import { ElMessage } from 'element-plus'
+import { fetchFileList, fetchRecycleList, getFileDownloadUrl } from '@/api/files'
 import { useCurrentIdStore } from '@/store/currentId'
 
 const props = defineProps({
@@ -272,7 +273,6 @@ const transformFileList = (data) => {
     category: item.category,
     modifyTime: item.modifyTime,
     fileSize: item.fileSize,
-    fileUrl: item.fileUrl,
   }))
 }
 
@@ -382,13 +382,20 @@ function closeContextMenu() {
   dropdownRef.value?.handleClose()
 }
 
-function downloadFile(row) {
-  if (!row || row.type === 0 || !row.fileUrl) {
+async function downloadFile(row) {
+  if (!row || row.type === 0 || !row.id) {
+    return
+  }
+
+  const response = await getFileDownloadUrl(row.id)
+  const downloadUrl = response?.data?.downloadUrl
+  if (!downloadUrl) {
+    ElMessage.error('未获取到下载链接')
     return
   }
 
   const link = document.createElement('a')
-  link.href = row.fileUrl
+  link.href = downloadUrl
   link.download = row.fileName || ''
   link.target = '_blank'
   link.rel = 'noopener'
@@ -397,14 +404,19 @@ function downloadFile(row) {
   document.body.removeChild(link)
 }
 
-function handleMenuAction(action, row) {
+async function handleMenuAction(action, row) {
   if (!row) {
     return
   }
 
   switch (action) {
     case 'download':
-      downloadFile(row)
+      try {
+        await downloadFile(row)
+      } catch (error) {
+        console.error('获取下载链接失败:', error)
+        ElMessage.error('下载失败，请稍后重试')
+      }
       break
     case 'delete':
       emitRowAction('delete', row)

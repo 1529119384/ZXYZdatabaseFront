@@ -4,6 +4,11 @@ export const fetchFileList = (parentId) => {
     params: { parentId },
   })
 }
+export const getFileDownloadUrl = (fileId) => {
+  return request.get('/getFileDownloadUrl', {
+    params: { fileId },
+  })
+}
 export const getUploadSign = (originalName) => {
   const params = new URLSearchParams()
   params.append('originalName', originalName)
