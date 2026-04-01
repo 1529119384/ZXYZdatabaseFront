@@ -1,11 +1,17 @@
-import request from '@/utils/request'
+﻿import request from '@/utils/request'
 
 export const fetchFileList = (parentId) => {
   return request.get('/getFileList', {
     params: { parentId },
   })
 }
-
+export const getUploadSign = (originalName) => {
+  const params = new URLSearchParams()
+  params.append('originalName', originalName)
+  return request.post('/getUploadSign', params, {
+    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+  })
+}
 export const deleteFileById = (id) => {
   const params = new URLSearchParams()
   params.append('fileId', id)
